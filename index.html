@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Supernatural Detective Game - An immersive AI-powered detective experience" />
+    <title>Supernatural Detective Game</title>
+    
+    <style>
+      /* Loading styles */
+      .loading-screen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+        color: #e2e8f0;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      
+      .loading-content {
+        text-align: center;
+      }
+      
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #475569;
+        border-top: 4px solid #fbbf24;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .error-screen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: #1e293b;
+        color: #e2e8f0;
+        font-family: system-ui, -apple-system, sans-serif;
+        padding: 2rem;
+      }
+      
+      .error-content {
+        text-align: center;
+        max-width: 600px;
+      }
+      
+      .btn {
+        background: #fbbf24;
+        color: #1e293b;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        font-weight: bold;
+        margin: 0.5rem;
+      }
+      
+      .btn:hover {
+        background: #f59e0b;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Initial loading screen -->
+      <div class="loading-screen">
+        <div class="loading-content">
+          <div class="spinner"></div>
+          <h1 style="color: #fbbf24; margin-bottom: 0.5rem;">🕵️ Supernatural Detective</h1>
+          <p>Loading investigation tools...</p>
+        </div>
+      </div>
+    </div>
+    
+    <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Enhanced error handling -->
+    <script>
+      // Track if React has loaded
+      let reactLoaded = false;
+      let loadTimeout;
+      
+      // Set a timeout to check if React loaded
+      loadTimeout = setTimeout(() => {
+        if (!reactLoaded) {
+          console.warn('React may not have loaded properly');
+          const root = document.getElementById('root');
+          if (root && root.innerHTML.includes('loading-screen')) {
+            root.innerHTML = `
+              <div class="error-screen">
+                <div class="error-content">
+                  <h1 style="color: #fbbf24; margin-bottom: 1rem;">🕵️ Supernatural Detective</h1>
+                  <h2 style="color: #ef4444; margin-bottom: 1rem;">Loading Issue</h2>
+                  <p style="margin-bottom: 1rem;">The application is taking longer than expected to load.</p>
+                  <p style="margin-bottom: 2rem;">This could be due to:</p>
+                  <ul style="text-align: left; margin-bottom: 2rem;">
+                    <li>Slow network connection</li>
+                    <li>Browser compatibility issues</li>
+                    <li>JavaScript being disabled</li>
+                    <li>Ad blockers or security extensions</li>
+                  </ul>
+                  <button class="btn" onclick="window.location.reload()">
+                    Retry Loading
+                  </button>
+                  <button class="btn" onclick="localStorage.clear(); sessionStorage.clear(); window.location.reload();" style="background: #6366f1; color: white;">
+                    Clear Cache & Retry
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+        }
+      }, 10000); // 10 second timeout
+      
+      // Clear timeout when React loads
+      window.addEventListener('load', () => {
+        reactLoaded = true;
+        if (loadTimeout) {
+          clearTimeout(loadTimeout);
+        }
+      });
+      
+      // Handle script loading errors
+      window.addEventListener('error', (event) => {
+        if (event.target.tagName === 'SCRIPT') {
+          console.error('Script failed to load:', event.target.src);
+          const root = document.getElementById('root');
+          if (root) {
+            root.innerHTML = `
+              <div class="error-screen">
+                <div class="error-content">
+                  <h1 style="color: #fbbf24; margin-bottom: 1rem;">🕵️ Supernatural Detective</h1>
+                  <h2 style="color: #ef4444; margin-bottom: 1rem;">Script Loading Error</h2>
+                  <p style="margin-bottom: 1rem;">Failed to load application scripts.</p>
+                  <p style="margin-bottom: 2rem;">Please try refreshing the page or check your internet connection.</p>
+                  <button class="btn" onclick="window.location.reload()">
+                    Reload Page
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+        }
+      });
+      
+      // Check for module support
+      if (!('noModule' in HTMLScriptElement.prototype)) {
+        document.getElementById('root').innerHTML = `
+          <div class="error-screen">
+            <div class="error-content">
+              <h1 style="color: #fbbf24; margin-bottom: 1rem;">🕵️ Supernatural Detective</h1>
+              <h2 style="color: #ef4444; margin-bottom: 1rem;">Browser Not Supported</h2>
+              <p style="margin-bottom: 1rem;">Your browser doesn't support modern JavaScript modules.</p>
+              <p style="margin-bottom: 2rem;">Please update to a modern browser:</p>
+              <ul style="text-align: left;">
+                <li>Chrome 61+</li>
+                <li>Firefox 60+</li>
+                <li>Safari 11+</li>
+                <li>Edge 16+</li>
+              </ul>
+            </div>
+          </div>
+        `;
+      }
+    </script>
+  </body>
+</html>
