@@ -4,6 +4,8 @@ import GameSetup from './components/GameSetup';
 import GamePlay from './components/GamePlay';
 import Settings from './components/Settings';
 import GameHistory from './components/GameHistory';
+import AtmosphericBackground from './components/AtmosphericBackground';
+import SoundEffects from './components/SoundEffects';
 import { GameProvider, useGame } from './contexts/GameContext';
 import SafeIcon from './common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
@@ -11,19 +13,60 @@ import './App.css';
 
 const { FiSettings, FiBook, FiHome, FiPlay, FiRefreshCw } = FiIcons;
 
-// Loading component
+// Enhanced Loading component
 const LoadingScreen = ({ message = "Loading Supernatural Detective..." }) => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-    <div className="text-center">
+  <div className="min-h-screen atmospheric-bg flex items-center justify-center">
+    <div className="text-center relative z-10">
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-        className="inline-block mb-4"
+        className="inline-block mb-6"
       >
-        <SafeIcon icon={FiRefreshCw} className="w-12 h-12 text-amber-400" />
+        <SafeIcon icon={FiRefreshCw} className="w-16 h-16 text-cyan-400" />
       </motion.div>
-      <h1 className="text-2xl font-bold text-amber-400 mb-2">🕵️ Supernatural Detective</h1>
-      <p className="text-slate-300">{message}</p>
+      
+      <motion.h1 
+        className="font-display text-4xl font-bold mb-4"
+        style={{
+          background: 'linear-gradient(135deg, #00d4ff, #8b5cf6)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
+        }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        🕵️ Supernatural Detective
+      </motion.h1>
+      
+      <motion.p 
+        className="text-slate-300 text-lg"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
+        {message}
+      </motion.p>
+      
+      {/* Loading progress dots */}
+      <div className="flex justify-center space-x-2 mt-6">
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="w-3 h-3 rounded-full bg-cyan-400"
+            animate={{
+              scale: [1, 1.5, 1],
+              opacity: [0.5, 1, 0.5]
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              delay: i * 0.2
+            }}
+          />
+        ))}
+      </div>
     </div>
   </div>
 );
@@ -34,16 +77,18 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState('Loading Supernatural Detective...');
 
-  // Simulate loading process
+  // Enhanced loading sequence
   useEffect(() => {
     const loadingSteps = [
-      { message: 'Loading Supernatural Detective...', duration: 500 },
-      { message: 'Preparing investigation tools...', duration: 300 },
-      { message: 'Connecting to the supernatural realm...', duration: 400 },
-      { message: 'Ready for investigation!', duration: 200 }
+      { message: 'Initializing investigation protocols...', duration: 800 },
+      { message: 'Calibrating supernatural sensors...', duration: 600 },
+      { message: 'Establishing connection to the ethereal plane...', duration: 700 },
+      { message: 'Preparing detective toolkit...', duration: 500 },
+      { message: 'Ready for investigation!', duration: 400 }
     ];
 
     let currentStep = 0;
+    
     const progressLoading = () => {
       if (currentStep < loadingSteps.length) {
         setLoadingMessage(loadingSteps[currentStep].message);
@@ -58,8 +103,7 @@ function AppContent() {
       }
     };
 
-    // Start loading process
-    const timer = setTimeout(progressLoading, 100);
+    const timer = setTimeout(progressLoading, 300);
     return () => clearTimeout(timer);
   }, []);
 
@@ -82,147 +126,167 @@ function AppContent() {
     history: <GameHistory />
   };
 
-  // Show navigation when game is started OR when we're in settings view
   const showNavigation = state.gameStarted || currentView === 'settings';
-  
-  // Show floating settings button only when on setup screen AND game is NOT started AND not already in settings
   const showFloatingSettings = !state.gameStarted && currentView === 'setup';
 
+  // Enhanced page transitions
+  const pageVariants = {
+    initial: { opacity: 0, x: 20, filter: 'blur(10px)' },
+    in: { opacity: 1, x: 0, filter: 'blur(0px)' },
+    out: { opacity: 0, x: -20, filter: 'blur(10px)' }
+  };
+
+  const pageTransition = {
+    type: 'tween',
+    ease: 'anticipate',
+    duration: 0.4
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Atmospheric Background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="w-full h-full bg-repeat"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }}
-        ></div>
-      </div>
-
-      {/* Navigation */}
-      {showNavigation && (
-        <motion.nav
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 p-4 border-b border-slate-700/50 backdrop-blur-sm"
-        >
-          <div className="max-w-6xl mx-auto flex justify-between items-center">
-            <motion.h1
-              className="text-2xl font-bold text-amber-400 tracking-wider cursor-pointer"
-              whileHover={{ scale: 1.05 }}
-              onClick={() => state.gameStarted ? setCurrentView('game') : setCurrentView('setup')}
+    <AtmosphericBackground intensity="medium">
+      <SoundEffects enabled={true} volume={0.3} />
+      
+      <div className="app-container">
+        {/* Enhanced Navigation */}
+        <AnimatePresence>
+          {showNavigation && (
+            <motion.nav
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="nav-container p-6 border-b border-white border-opacity-10"
             >
-              🕵️ SUPERNATURAL DETECTIVE
-            </motion.h1>
-
-            <div className="flex space-x-4">
-              {!state.gameStarted && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentView('setup')}
-                  className={`p-2 rounded-lg transition-colors ${
-                    currentView === 'setup'
-                      ? 'bg-amber-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
+              <div className="max-w-7xl mx-auto flex justify-between items-center">
+                {/* Enhanced Title */}
+                <motion.h1
+                  className="nav-title"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => state.gameStarted ? setCurrentView('game') : setCurrentView('setup')}
+                  onMouseEnter={() => window.playSound?.('hover')}
                 >
-                  <SafeIcon icon={FiPlay} className="w-5 h-5" />
-                </motion.button>
-              )}
+                  🕵️ SUPERNATURAL DETECTIVE
+                </motion.h1>
 
-              {state.gameStarted && (
-                <>
+                {/* Enhanced Navigation Buttons */}
+                <div className="flex space-x-3">
+                  {!state.gameStarted && (
+                    <motion.button
+                      whileHover={{ scale: 1.1, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        setCurrentView('setup');
+                        window.playSound?.('click');
+                      }}
+                      onMouseEnter={() => window.playSound?.('hover')}
+                      className={`nav-button ${currentView === 'setup' ? 'active' : ''}`}
+                    >
+                      <SafeIcon icon={FiPlay} className="w-5 h-5" />
+                    </motion.button>
+                  )}
+
+                  {state.gameStarted && (
+                    <>
+                      <motion.button
+                        whileHover={{ scale: 1.1, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setCurrentView('game');
+                          window.playSound?.('click');
+                        }}
+                        onMouseEnter={() => window.playSound?.('hover')}
+                        className={`nav-button ${currentView === 'game' ? 'active' : ''}`}
+                      >
+                        <SafeIcon icon={FiHome} className="w-5 h-5" />
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.1, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setCurrentView('history');
+                          window.playSound?.('click');
+                        }}
+                        onMouseEnter={() => window.playSound?.('hover')}
+                        className={`nav-button ${currentView === 'history' ? 'active' : ''}`}
+                      >
+                        <SafeIcon icon={FiBook} className="w-5 h-5" />
+                      </motion.button>
+                    </>
+                  )}
+
                   <motion.button
-                    whileHover={{ scale: 1.1 }}
+                    whileHover={{ scale: 1.1, y: -2 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setCurrentView('game')}
-                    className={`p-2 rounded-lg transition-colors ${
-                      currentView === 'game'
-                        ? 'bg-amber-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                    }`}
+                    onClick={() => {
+                      setCurrentView('settings');
+                      window.playSound?.('click');
+                    }}
+                    onMouseEnter={() => window.playSound?.('hover')}
+                    className={`nav-button ${currentView === 'settings' ? 'active' : ''}`}
                   >
-                    <SafeIcon icon={FiHome} className="w-5 h-5" />
+                    <SafeIcon icon={FiSettings} className="w-5 h-5" />
                   </motion.button>
+                </div>
+              </div>
+            </motion.nav>
+          )}
+        </AnimatePresence>
 
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setCurrentView('history')}
-                    className={`p-2 rounded-lg transition-colors ${
-                      currentView === 'history'
-                        ? 'bg-amber-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                    }`}
-                  >
-                    <SafeIcon icon={FiBook} className="w-5 h-5" />
-                  </motion.button>
-                </>
-              )}
-
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setCurrentView('settings')}
-                className={`p-2 rounded-lg transition-colors ${
-                  currentView === 'settings'
-                    ? 'bg-amber-600 text-white'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-              >
-                <SafeIcon icon={FiSettings} className="w-5 h-5" />
-              </motion.button>
-            </div>
-          </div>
-        </motion.nav>
-      )}
-
-      {/* Floating Settings Button (only on setup screen when game not started) */}
-      {showFloatingSettings && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute top-4 right-4 z-20"
-        >
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setCurrentView('settings')}
-            className="p-3 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-amber-400 rounded-lg border border-slate-600 transition-all backdrop-blur-sm"
-            title="Settings"
-          >
-            <SafeIcon icon={FiSettings} className="w-5 h-5" />
-          </motion.button>
-        </motion.div>
-      )}
-
-      {/* Main Content */}
-      <div className="relative z-10">
-        <Suspense fallback={<LoadingScreen message="Loading component..." />}>
-          <AnimatePresence mode="wait">
+        {/* Enhanced Floating Settings Button */}
+        <AnimatePresence>
+          {showFloatingSettings && (
             <motion.div
-              key={currentView}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              exit={{ opacity: 0, scale: 0.8, rotate: 10 }}
+              className="floating-settings"
             >
-              {views[currentView]}
+              <motion.button
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setCurrentView('settings');
+                  window.playSound?.('click');
+                }}
+                onMouseEnter={() => window.playSound?.('hover')}
+                className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                title="Settings"
+              >
+                <SafeIcon icon={FiSettings} className="w-6 h-6" />
+              </motion.button>
             </motion.div>
-          </AnimatePresence>
-        </Suspense>
+          )}
+        </AnimatePresence>
+
+        {/* Enhanced Main Content */}
+        <div className="content-area">
+          <Suspense fallback={<LoadingScreen message="Loading component..." />}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentView}
+                initial="initial"
+                animate="in"
+                exit="out"
+                variants={pageVariants}
+                transition={pageTransition}
+              >
+                {views[currentView]}
+              </motion.div>
+            </AnimatePresence>
+          </Suspense>
+        </div>
       </div>
-    </div>
+    </AtmosphericBackground>
   );
 }
 
 function App() {
   useEffect(() => {
-    // Mark that React has loaded successfully
+    // Enhanced app initialization
     if (typeof window !== 'undefined') {
       window.reactLoaded = true;
-      console.log('✅ React App loaded successfully');
+      console.log('✅ Supernatural Detective initialized successfully');
     }
   }, []);
 

@@ -22,7 +22,8 @@
     "echarts": "^5.5.0",
     "echarts-for-react": "^3.0.2",
     "date-fns": "4.1.0",
-    "openai": "^4.28.0"
+    "openai": "^4.28.0",
+    "howler": "^2.2.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

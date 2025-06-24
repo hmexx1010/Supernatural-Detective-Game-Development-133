@@ -1,6 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* CSS Variables */
+:root {
+  /* Noir Color Palette */
+  --noir-bg: #0a0b0f;
+  --noir-surface: #151821;
+  --noir-card: #1e2332;
+  --noir-border: #2a3441;
+  --noir-text: #e8eaed;
+  --noir-text-dim: #9aa0a6;
+  --noir-text-muted: #5f6368;
+  
+  /* Neon Accents */
+  --accent-neon: #00d4ff;
+  --accent-purple: #8b5cf6;
+  --accent-amber: #fbbf24;
+  --accent-pink: #ec4899;
+  --accent-green: #10b981;
+  
+  /* Status Colors */
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  
+  /* Shadows & Effects */
+  --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.15);
+  --shadow-glow-purple: 0 0 20px rgba(139, 92, 246, 0.15);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 20px 40px rgba(0, 0, 0, 0.6);
+  
+  /* Gradients */
+  --gradient-neon: linear-gradient(135deg, var(--accent-neon), var(--accent-purple));
+  --gradient-amber: linear-gradient(135deg, var(--accent-amber), #f97316);
+  --gradient-danger: linear-gradient(135deg, var(--danger), #dc2626);
+  --gradient-success: linear-gradient(135deg, var(--success), #059669);
+}
 
 * {
   margin: 0;
@@ -9,12 +47,335 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--noir-bg);
+  color: var(--noir-text);
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.7;
+  /* Prevent layout shifts from animations */
+  position: relative;
 }
 
 #root {
   width: 100%;
+  min-height: 100vh;
+  /* Contain layout to prevent overflow issues */
+  contain: layout style;
+}
+
+/* Typography Classes */
+.font-display {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 400;
+}
+
+/* Glass Morphism Cards - Optimized */
+.glass-card {
+  background: rgba(30, 35, 50, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s ease;
+  will-change: transform, background-color, border-color;
+}
+
+.glass-card:hover {
+  background: rgba(30, 35, 50, 0.9);
+  border-color: rgba(0, 212, 255, 0.3);
+  box-shadow: var(--shadow-elevated), var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+/* Interactive Button Styles - Constrained */
+.btn-primary {
+  background: var(--gradient-neon);
+  color: var(--noir-bg);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  will-change: transform, box-shadow;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
   height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+  will-change: left;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Choice Button Styles - Reduced movement */
+.choice-btn {
+  background: rgba(30, 35, 50, 0.6);
+  border: 2px solid transparent;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  will-change: transform, background-color, border-color;
+}
+
+.choice-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(139, 92, 246, 0.05));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.choice-btn:hover::before {
+  opacity: 1;
+}
+
+.choice-btn:hover {
+  background: rgba(30, 35, 50, 0.9);
+  border-color: var(--accent-neon);
+  box-shadow: var(--shadow-glow);
+  transform: translateX(6px) translateY(-2px);
+}
+
+/* Progress Bar Animation - Contained */
+.progress-bar {
+  background: rgba(30, 35, 50, 0.8);
+  border-radius: 1rem;
+  padding: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  contain: layout;
+}
+
+.progress-fill {
+  background: var(--gradient-neon);
+  height: 100%;
+  border-radius: 0.75rem;
+  position: relative;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  will-change: width;
+}
+
+.progress-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: progressShine 2s ease-in-out infinite;
+  will-change: left;
+}
+
+@keyframes progressShine {
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Floating Elements - Constrained */
+.floating-element {
+  animation: float 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Pulse Animation - Reduced intensity */
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite alternate;
+  will-change: box-shadow;
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
+  }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--noir-surface);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--accent-neon), var(--accent-purple));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-neon));
+}
+
+/* Text Selection */
+::selection {
+  background: rgba(0, 212, 255, 0.3);
+  color: var(--noir-text);
+}
+
+/* Focus Styles for Accessibility */
+*:focus {
+  outline: 2px solid var(--accent-neon);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  :root {
+    --noir-bg: #000;
+    --noir-text: #fff;
+    --accent-neon: #00ffff;
+    --accent-purple: #ff00ff;
+  }
+}
+
+/* Reduced Motion Support - Significantly reduced animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.3s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.3s !important;
+  }
+  
+  .choice-btn:hover {
+    transform: translateX(2px);
+  }
+  
+  .btn-primary:hover {
+    transform: translateY(-1px);
+  }
+  
+  .glass-card:hover {
+    transform: translateY(-1px);
+  }
+  
+  .floating-element {
+    animation: none;
+  }
+  
+  .pulse-glow {
+    animation: none;
+  }
+}
+
+/* Mobile Optimizations - Reduced transforms */
+@media (max-width: 768px) {
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+  }
+  
+  .choice-btn {
+    padding: 1.25rem;
+  }
+  
+  .choice-btn:hover {
+    transform: translateX(4px) translateY(-1px);
+  }
+  
+  .glass-card {
+    margin: 1rem;
+  }
+  
+  .glass-card:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* Desktop Enhancements - Controlled */
+@media (min-width: 1025px) {
+  .glass-card:hover {
+    transform: translateY(-3px) scale(1.01);
+  }
+  
+  .choice-btn:hover {
+    transform: translateX(8px) translateY(-3px);
+  }
+}
+
+/* Performance optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-auto {
+  will-change: auto;
+}
+
+/* Contain layout shifts */
+.contain-layout {
+  contain: layout;
+}
+
+.contain-strict {
+  contain: strict;
+}
+
+/* Prevent overflow issues */
+.overflow-container {
+  overflow: hidden;
+  position: relative;
 }

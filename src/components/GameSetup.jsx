@@ -23,7 +23,7 @@ const GameSetup = ({ onGameStart }) => {
       alert('Please configure your OpenAI API key in Settings before starting the game.');
       return;
     }
-    
+
     if (Object.values(formData).every(value => value.trim())) {
       dispatch({ type: 'SET_GAME_SETUP', payload: formData });
       dispatch({ type: 'START_GAME' });
@@ -37,50 +37,33 @@ const GameSetup = ({ onGameStart }) => {
 
   const suggestions = {
     supernaturalElement: [
-      'Vengeful Spirits',
-      'Ancient Curses',
-      'Demonic Possession',
-      'Time Anomalies',
-      'Shadow People',
-      'Psychic Vampires',
-      'Haunted Objects',
-      'Dimensional Rifts'
+      'Vengeful Spirits', 'Ancient Curses', 'Demonic Possession', 'Time Anomalies',
+      'Shadow People', 'Psychic Vampires', 'Haunted Objects', 'Dimensional Rifts'
     ],
     primaryLocation: [
-      'Abandoned Asylum',
-      'Victorian Mansion',
-      'Old Theater',
-      'Forgotten Cemetery',
-      'Underground Tunnels',
-      'Decrepit Library',
-      'Haunted Hotel',
-      'Ancient Church'
+      'Abandoned Asylum', 'Victorian Mansion', 'Old Theater', 'Forgotten Cemetery',
+      'Underground Tunnels', 'Decrepit Library', 'Haunted Hotel', 'Ancient Church'
     ],
     mainObjective: [
-      'Stop the supernatural killings',
-      'Banish an ancient evil',
-      'Solve a century-old mystery',
-      'Save the innocent victims',
-      'Prevent an apocalyptic ritual',
-      'Break a family curse',
-      'Find the missing persons',
-      'Restore balance to the supernatural realm'
+      'Stop the supernatural killings', 'Banish an ancient evil', 'Solve a century-old mystery',
+      'Save the innocent victims', 'Prevent an apocalyptic ritual', 'Break a family curse',
+      'Find the missing persons', 'Restore balance to the supernatural realm'
     ]
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 overflow-container">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-2xl w-full bg-slate-800/90 backdrop-blur-sm rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden"
+        className="max-w-2xl w-full bg-slate-800/90 backdrop-blur-sm rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden contain-layout"
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-amber-600 to-amber-500 p-6 text-center">
           <motion.div
             initial={{ y: -20 }}
             animate={{ y: 0 }}
-            className="text-4xl mb-2"
+            className="text-4xl mb-2 will-change-transform"
           >
             🕵️‍♂️
           </motion.div>
@@ -103,7 +86,7 @@ const GameSetup = ({ onGameStart }) => {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="p-8 space-y-6 contain-layout">
           {/* Detective Name */}
           <motion.div
             initial={{ x: -20, opacity: 0 }}
@@ -119,7 +102,7 @@ const GameSetup = ({ onGameStart }) => {
               value={formData.detectiveName}
               onChange={(e) => handleChange('detectiveName', e.target.value)}
               placeholder="e.g., Detective Morgan Kane"
-              className="w-full p-4 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
+              className="w-full p-4 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all will-change-auto"
             />
           </motion.div>
 
@@ -138,17 +121,17 @@ const GameSetup = ({ onGameStart }) => {
               value={formData.supernaturalElement}
               onChange={(e) => handleChange('supernaturalElement', e.target.value)}
               placeholder="e.g., Vengeful Spirits"
-              className="w-full p-4 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
+              className="w-full p-4 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all will-change-auto"
             />
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="flex flex-wrap gap-2 mt-3 overflow-container">
               {suggestions.supernaturalElement.map((suggestion, index) => (
                 <motion.button
                   key={index}
                   type="button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => handleChange('supernaturalElement', suggestion)}
-                  className="px-3 py-1 bg-slate-700 hover:bg-amber-600 text-slate-300 hover:text-white rounded-full text-sm transition-all"
+                  className="px-3 py-1 bg-slate-700 hover:bg-amber-600 text-slate-300 hover:text-white rounded-full text-sm transition-all will-change-transform"
                 >
                   {suggestion}
                 </motion.button>
@@ -171,17 +154,17 @@ const GameSetup = ({ onGameStart }) => {
               value={formData.primaryLocation}
               onChange={(e) => handleChange('primaryLocation', e.target.value)}
               placeholder="e.g., Abandoned Asylum"
-              className="w-full p-4 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
+              className="w-full p-4 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all will-change-auto"
             />
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="flex flex-wrap gap-2 mt-3 overflow-container">
               {suggestions.primaryLocation.map((suggestion, index) => (
                 <motion.button
                   key={index}
                   type="button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => handleChange('primaryLocation', suggestion)}
-                  className="px-3 py-1 bg-slate-700 hover:bg-amber-600 text-slate-300 hover:text-white rounded-full text-sm transition-all"
+                  className="px-3 py-1 bg-slate-700 hover:bg-amber-600 text-slate-300 hover:text-white rounded-full text-sm transition-all will-change-transform"
                 >
                   {suggestion}
                 </motion.button>
@@ -204,17 +187,17 @@ const GameSetup = ({ onGameStart }) => {
               value={formData.mainObjective}
               onChange={(e) => handleChange('mainObjective', e.target.value)}
               placeholder="e.g., Stop the supernatural killings"
-              className="w-full p-4 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
+              className="w-full p-4 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all will-change-auto"
             />
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="flex flex-wrap gap-2 mt-3 overflow-container">
               {suggestions.mainObjective.map((suggestion, index) => (
                 <motion.button
                   key={index}
                   type="button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => handleChange('mainObjective', suggestion)}
-                  className="px-3 py-1 bg-slate-700 hover:bg-amber-600 text-slate-300 hover:text-white rounded-full text-sm transition-all"
+                  className="px-3 py-1 bg-slate-700 hover:bg-amber-600 text-slate-300 hover:text-white rounded-full text-sm transition-all will-change-transform"
                 >
                   {suggestion}
                 </motion.button>
@@ -231,7 +214,7 @@ const GameSetup = ({ onGameStart }) => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:from-slate-600 disabled:to-slate-500 text-white font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-3 text-lg disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 disabled:from-slate-600 disabled:to-slate-500 text-white font-bold py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-3 text-lg disabled:cursor-not-allowed will-change-transform"
           >
             <SafeIcon icon={FiPlay} className="w-6 h-6" />
             Begin Investigation

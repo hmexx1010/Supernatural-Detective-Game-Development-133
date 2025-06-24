@@ -2,94 +2,205 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/detective-icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Supernatural Detective Game - An immersive AI-powered detective experience" />
     <title>Supernatural Detective Game</title>
     
+    <!-- Google Fonts - Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    
     <style>
-      /* Loading styles */
+      /* CSS Variables for theming */
+      :root {
+        --noir-bg: #0a0b0f;
+        --noir-surface: #151821;
+        --noir-card: #1e2332;
+        --noir-border: #2a3441;
+        --noir-text: #e8eaed;
+        --noir-text-dim: #9aa0a6;
+        --noir-text-muted: #5f6368;
+        --accent-neon: #00d4ff;
+        --accent-purple: #8b5cf6;
+        --accent-amber: #fbbf24;
+        --danger: #ef4444;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.15);
+        --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+      }
+
+      /* Reset and base styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        background: var(--noir-bg);
+        color: var(--noir-text);
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        line-height: 1.6;
+      }
+
+      /* Loading screen styles */
       .loading-screen {
         display: flex;
         align-items: center;
         justify-content: center;
         min-height: 100vh;
-        background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e293b 100%);
-        color: #e2e8f0;
-        font-family: system-ui, -apple-system, sans-serif;
+        background: linear-gradient(135deg, var(--noir-bg) 0%, #1a1b3a 50%, var(--noir-bg) 100%);
+        position: relative;
+        overflow: hidden;
       }
-      
+
+      .loading-screen::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+          radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.1) 0%, transparent 50%);
+        animation: atmosphericPulse 8s ease-in-out infinite alternate;
+      }
+
+      @keyframes atmosphericPulse {
+        0% { opacity: 0.3; }
+        100% { opacity: 0.7; }
+      }
+
       .loading-content {
         text-align: center;
+        z-index: 2;
+        position: relative;
       }
-      
+
       .spinner {
-        width: 40px;
-        height: 40px;
-        border: 4px solid #475569;
-        border-top: 4px solid #fbbf24;
+        width: 60px;
+        height: 60px;
+        border: 3px solid rgba(0, 212, 255, 0.2);
+        border-top: 3px solid var(--accent-neon);
         border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 1rem;
+        animation: spin 1.2s linear infinite;
+        margin: 0 auto 2rem;
+        box-shadow: var(--shadow-glow);
       }
-      
+
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
-      
+
+      .loading-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        font-weight: 600;
+        background: linear-gradient(135deg, var(--accent-neon), var(--accent-purple));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+        letter-spacing: -0.02em;
+      }
+
+      .loading-subtitle {
+        color: var(--noir-text-dim);
+        font-size: 1.1rem;
+        font-weight: 400;
+        letter-spacing: 0.02em;
+      }
+
+      /* Error screen styles */
       .error-screen {
         display: flex;
         align-items: center;
         justify-content: center;
         min-height: 100vh;
-        background: #1e293b;
-        color: #e2e8f0;
-        font-family: system-ui, -apple-system, sans-serif;
+        background: var(--noir-bg);
+        color: var(--noir-text);
+        font-family: 'Inter', system-ui, sans-serif;
         padding: 2rem;
       }
-      
+
       .error-content {
         text-align: center;
         max-width: 600px;
+        background: var(--noir-card);
+        padding: 3rem;
+        border-radius: 1rem;
+        border: 1px solid var(--noir-border);
+        box-shadow: var(--shadow-card);
       }
-      
+
       .btn {
-        background: #fbbf24;
-        color: #1e293b;
-        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, var(--accent-neon), var(--accent-purple));
+        color: var(--noir-bg);
+        padding: 0.875rem 1.75rem;
         border: none;
-        border-radius: 0.5rem;
+        border-radius: 0.75rem;
         cursor: pointer;
-        font-weight: bold;
+        font-weight: 600;
+        font-size: 0.95rem;
         margin: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 212, 255, 0.2);
       }
-      
+
       .btn:hover {
-        background: #f59e0b;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      /* Accessibility improvements */
+      @media (prefers-reduced-motion: reduce) {
+        .spinner,
+        .atmosphericPulse {
+          animation: none;
+        }
+      }
+
+      /* High contrast mode support */
+      @media (prefers-contrast: high) {
+        :root {
+          --noir-bg: #000;
+          --noir-text: #fff;
+          --accent-neon: #00ffff;
+        }
       }
     </style>
   </head>
   <body>
     <div id="root">
-      <!-- Initial loading screen -->
+      <!-- Enhanced loading screen -->
       <div class="loading-screen">
         <div class="loading-content">
           <div class="spinner"></div>
-          <h1 style="color: #fbbf24; margin-bottom: 0.5rem;">🕵️ Supernatural Detective</h1>
-          <p>Loading investigation tools...</p>
+          <h1 class="loading-title">🕵️ Supernatural Detective</h1>
+          <p class="loading-subtitle">Preparing your investigation...</p>
         </div>
       </div>
     </div>
-    
+
     <script type="module" src="/src/main.jsx"></script>
-    
+
     <!-- Enhanced error handling -->
     <script>
-      // Track if React has loaded
       let reactLoaded = false;
       let loadTimeout;
-      
+
       // Set a timeout to check if React loaded
       loadTimeout = setTimeout(() => {
         if (!reactLoaded) {
@@ -99,29 +210,29 @@
             root.innerHTML = `
               <div class="error-screen">
                 <div class="error-content">
-                  <h1 style="color: #fbbf24; margin-bottom: 1rem;">🕵️ Supernatural Detective</h1>
-                  <h2 style="color: #ef4444; margin-bottom: 1rem;">Loading Issue</h2>
-                  <p style="margin-bottom: 1rem;">The application is taking longer than expected to load.</p>
-                  <p style="margin-bottom: 2rem;">This could be due to:</p>
-                  <ul style="text-align: left; margin-bottom: 2rem;">
+                  <h1 class="loading-title">🕵️ Supernatural Detective</h1>
+                  <h2 style="color: var(--danger); margin-bottom: 1rem; font-size: 1.5rem;">Loading Issue</h2>
+                  <p style="margin-bottom: 1rem; color: var(--noir-text-dim);">The application is taking longer than expected to load.</p>
+                  <p style="margin-bottom: 2rem; color: var(--noir-text-muted);">This could be due to:</p>
+                  <ul style="text-align: left; margin-bottom: 2rem; color: var(--noir-text-dim);">
                     <li>Slow network connection</li>
                     <li>Browser compatibility issues</li>
                     <li>JavaScript being disabled</li>
                     <li>Ad blockers or security extensions</li>
                   </ul>
                   <button class="btn" onclick="window.location.reload()">
-                    Retry Loading
+                    🔄 Retry Loading
                   </button>
-                  <button class="btn" onclick="localStorage.clear(); sessionStorage.clear(); window.location.reload();" style="background: #6366f1; color: white;">
-                    Clear Cache & Retry
+                  <button class="btn" onclick="localStorage.clear();sessionStorage.clear();window.location.reload();" style="background: linear-gradient(135deg, var(--accent-purple), var(--danger));">
+                    🧹 Clear Cache & Retry
                   </button>
                 </div>
               </div>
             `;
           }
         }
-      }, 10000); // 10 second timeout
-      
+      }, 10000);
+
       // Clear timeout when React loads
       window.addEventListener('load', () => {
         reactLoaded = true;
@@ -129,7 +240,7 @@
           clearTimeout(loadTimeout);
         }
       });
-      
+
       // Handle script loading errors
       window.addEventListener('error', (event) => {
         if (event.target.tagName === 'SCRIPT') {
@@ -139,12 +250,12 @@
             root.innerHTML = `
               <div class="error-screen">
                 <div class="error-content">
-                  <h1 style="color: #fbbf24; margin-bottom: 1rem;">🕵️ Supernatural Detective</h1>
-                  <h2 style="color: #ef4444; margin-bottom: 1rem;">Script Loading Error</h2>
+                  <h1 class="loading-title">🕵️ Supernatural Detective</h1>
+                  <h2 style="color: var(--danger); margin-bottom: 1rem;">Script Loading Error</h2>
                   <p style="margin-bottom: 1rem;">Failed to load application scripts.</p>
                   <p style="margin-bottom: 2rem;">Please try refreshing the page or check your internet connection.</p>
                   <button class="btn" onclick="window.location.reload()">
-                    Reload Page
+                    🔄 Reload Page
                   </button>
                 </div>
               </div>
@@ -152,14 +263,14 @@
           }
         }
       });
-      
+
       // Check for module support
       if (!('noModule' in HTMLScriptElement.prototype)) {
         document.getElementById('root').innerHTML = `
           <div class="error-screen">
             <div class="error-content">
-              <h1 style="color: #fbbf24; margin-bottom: 1rem;">🕵️ Supernatural Detective</h1>
-              <h2 style="color: #ef4444; margin-bottom: 1rem;">Browser Not Supported</h2>
+              <h1 class="loading-title">🕵️ Supernatural Detective</h1>
+              <h2 style="color: var(--danger); margin-bottom: 1rem;">Browser Not Supported</h2>
               <p style="margin-bottom: 1rem;">Your browser doesn't support modern JavaScript modules.</p>
               <p style="margin-bottom: 2rem;">Please update to a modern browser:</p>
               <ul style="text-align: left;">

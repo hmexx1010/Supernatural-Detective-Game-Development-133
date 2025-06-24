@@ -1,101 +1,466 @@
+/* Enhanced App-specific styles with constrained animations */
 .app-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e293b 100%);
   position: relative;
+  background: var(--noir-bg);
+  overflow-x: hidden;
+  /* Prevent animations from affecting layout */
+  contain: layout style paint;
 }
 
+/* Atmospheric Background Layers - Fixed positioning */
 .app-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 212, 255, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(251, 191, 36, 0.02) 0%, transparent 70%);
+  animation: atmosphericShift 30s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+  will-change: opacity, transform;
+}
+
+.app-container::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='0.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  animation: subtlePattern 60s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+  will-change: transform;
+}
+
+@keyframes subtlePattern {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(60px, 60px);
+  }
+}
+
+@keyframes atmosphericShift {
+  0% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(0.98);
+  }
+}
+
+/* Navigation Styles */
+.nav-container {
+  position: relative;
+  z-index: 100;
+  background: rgba(10, 11, 15, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  /* Prevent layout shifts */
+  contain: layout;
+}
+
+.nav-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1.75rem;
+  background: var(--gradient-neon);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  will-change: transform, filter;
+}
+
+.nav-title:hover {
+  filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.5));
+  transform: scale(1.02);
+}
+
+.nav-button {
+  position: relative;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(30, 35, 50, 0.6);
+  border: 1px solid transparent;
+  color: var(--noir-text-dim);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  overflow: hidden;
+  will-change: transform, background-color, border-color;
+}
+
+.nav-button::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
-    radial-gradient(circle at 25% 25%, rgba(251, 191, 36, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
-  pointer-events: none;
+  background: var(--gradient-neon);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 8px;
+.nav-button:hover::before {
+  opacity: 0.1;
 }
 
-::-webkit-scrollbar-track {
-  background: #1e293b;
+.nav-button:hover {
+  color: var(--accent-neon);
+  border-color: rgba(0, 212, 255, 0.3);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
 }
 
-::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
+.nav-button.active {
+  background: var(--gradient-neon);
+  color: var(--noir-bg);
+  border-color: var(--accent-neon);
+  box-shadow: var(--shadow-glow);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+/* Floating Settings Button - Fixed positioning */
+.floating-settings {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  z-index: 200;
+  background: rgba(30, 35, 50, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: var(--shadow-elevated), var(--shadow-glow);
+  transition: all 0.3s ease;
+  will-change: transform;
 }
 
-/* Custom animations */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.floating-settings:hover {
+  transform: translateY(-4px) rotate(5deg);
+  box-shadow: var(--shadow-elevated), 0 0 30px rgba(0, 212, 255, 0.4);
 }
 
-.fade-in-up {
-  animation: fadeInUp 0.5s ease-out;
+/* Content Area */
+.content-area {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+  padding: 0;
+  /* Contain animations within content */
+  contain: layout style;
 }
 
-/* Prose styling for narrative text */
-.prose {
-  color: #e2e8f0;
-  line-height: 1.7;
+/* Game Setup Specific Styles */
+.setup-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  position: relative;
 }
 
-.prose p {
+.setup-card {
+  max-width: 600px;
+  width: 100%;
+  background: rgba(30, 35, 50, 0.95);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 2rem;
+  box-shadow: var(--shadow-elevated);
+  overflow: hidden;
+  position: relative;
+  /* Prevent internal animations from affecting layout */
+  contain: layout;
+}
+
+.setup-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: var(--gradient-neon);
+}
+
+.setup-header {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(139, 92, 246, 0.1));
+  padding: 3rem 2rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.setup-icon {
+  font-size: 4rem;
   margin-bottom: 1rem;
+  animation: float 4s ease-in-out infinite;
+  will-change: transform;
 }
 
-.prose strong {
-  color: #fbbf24;
+.setup-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  font-weight: 700;
+  background: var(--gradient-neon);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.setup-subtitle {
+  color: var(--noir-text-dim);
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* Form Input Styles */
+.form-group {
+  margin-bottom: 2rem;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--noir-text);
+  font-size: 1.1rem;
   font-weight: 600;
+  margin-bottom: 1rem;
+  letter-spacing: 0.01em;
 }
 
-.prose em {
-  color: #94a3b8;
+.form-input {
+  width: 100%;
+  padding: 1.25rem 1.5rem;
+  background: rgba(21, 24, 33, 0.8);
+  border: 2px solid var(--noir-border);
+  border-radius: 1rem;
+  color: var(--noir-text);
+  font-size: 1rem;
+  font-weight: 400;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  will-change: border-color, background-color;
+}
+
+.form-input::placeholder {
+  color: var(--noir-text-muted);
   font-style: italic;
 }
 
-/* Button hover effects */
-.btn-hover {
-  transition: all 0.2s ease;
+.form-input:focus {
+  border-color: var(--accent-neon);
+  box-shadow: var(--shadow-glow), 0 0 0 3px rgba(0, 212, 255, 0.1);
+  background: rgba(21, 24, 33, 1);
+  outline: none;
 }
 
-.btn-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+/* Suggestion Tags */
+.suggestion-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
-/* Glass morphism effect */
-.glass {
-  background: rgba(30, 41, 59, 0.8);
+.suggestion-tag {
+  padding: 0.5rem 1rem;
+  background: rgba(30, 35, 50, 0.8);
+  border: 1px solid var(--noir-border);
+  border-radius: 2rem;
+  color: var(--noir-text-dim);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(71, 85, 105, 0.3);
+  will-change: transform, background-color;
 }
 
-/* Noir atmosphere enhancements */
-.noir-shadow {
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.3),
-    0 2px 4px -1px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+.suggestion-tag:hover {
+  background: var(--gradient-neon);
+  color: var(--noir-bg);
+  border-color: var(--accent-neon);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
 }
 
-.noir-glow {
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+/* Choice Selection - Constrained animations */
+.choices-container {
+  margin-top: 3rem;
+}
+
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.choice-item {
+  background: rgba(30, 35, 50, 0.6);
+  backdrop-filter: blur(15px);
+  border: 2px solid transparent;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  will-change: transform, background-color;
+}
+
+.choice-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  transition: left 0.6s ease;
+  will-change: left;
+}
+
+.choice-item:hover::before {
+  left: 100%;
+}
+
+.choice-item:hover {
+  background: rgba(30, 35, 50, 0.9);
+  transform: translateX(8px) translateY(-4px);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Loading States - Contained */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+}
+
+.spinner {
+  width: 4rem;
+  height: 4rem;
+  border: 4px solid rgba(0, 212, 255, 0.2);
+  border-top: 4px solid var(--accent-neon);
+  border-radius: 50%;
+  animation: spin 1.2s linear infinite;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-glow);
+  will-change: transform;
+}
+
+/* Float animation - constrained */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Spin animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design - Adjusted transforms */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 0;
+  }
+  
+  .choice-item:hover {
+    transform: translateX(4px) translateY(-2px);
+  }
+  
+  .floating-settings {
+    top: 1rem;
+    right: 1rem;
+    padding: 0.75rem;
+  }
+  
+  .nav-title:hover {
+    transform: scale(1.01);
+  }
+}
+
+@media (max-width: 480px) {
+  .choice-item:hover {
+    transform: translateX(2px) translateY(-1px);
+  }
+  
+  .suggestion-tag:hover {
+    transform: translateY(-1px) scale(1.02);
+  }
+}
+
+/* High-end Desktop - Reduced animation intensity */
+@media (min-width: 1200px) {
+  .choice-item:hover {
+    transform: translateX(12px) translateY(-6px);
+  }
+}
+
+/* Performance optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+/* Contain animations for better performance */
+.animated-element {
+  contain: layout style paint;
+  will-change: transform, opacity;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .choice-item:hover {
+    transform: translateX(4px);
+  }
+  
+  .suggestion-tag:hover {
+    transform: translateY(-1px);
+  }
+  
+  .nav-title:hover {
+    transform: none;
+  }
+  
+  .floating-settings:hover {
+    transform: translateY(-2px);
+  }
 }
