@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiBook, FiClock, FiTrendingUp, FiTrendingDown, FiMinus, FiStar, FiSkull } = FiIcons;
+const { FiBook, FiClock, FiTrendingUp, FiTrendingDown, FiMinus, FiStar, FiSkull, FiImage } = FiIcons;
 
 const GameHistory = () => {
   const { state } = useGame();
@@ -147,6 +147,19 @@ const GameHistory = () => {
                   </div>
                 </div>
 
+                {/* Scene Image */}
+                {entry.image && (
+                  <div className="mb-4">
+                    <motion.img
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      src={entry.image}
+                      alt={`Scene from Turn ${entry.turn}`}
+                      className="w-full max-w-md mx-auto rounded-lg shadow-lg border border-slate-600/50"
+                    />
+                  </div>
+                )}
+
                 {/* Narrative */}
                 <div className="mb-4">
                   <h4 className="text-amber-400 font-medium mb-2">Situation:</h4>
@@ -186,6 +199,19 @@ const GameHistory = () => {
                 : 'bg-red-900/50 border border-red-500/50'
             }`}
           >
+            {/* Ending Image */}
+            {state.endingImage && (
+              <div className="mb-6">
+                <motion.img
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  src={state.endingImage}
+                  alt={`${state.gameStatus === 'won' ? 'Victory' : 'Defeat'} ending`}
+                  className="w-full max-w-2xl mx-auto rounded-lg shadow-2xl border border-slate-600/50"
+                />
+              </div>
+            )}
+
             <div className="text-6xl mb-4">
               {state.gameStatus === 'won' ? '🎉' : '💀'}
             </div>
@@ -194,12 +220,27 @@ const GameHistory = () => {
             }`}>
               {state.gameStatus === 'won' ? 'Case Solved!' : 'Case Failed'}
             </h3>
+            
+            {/* Ending Text */}
+            {state.gameEnding && (
+              <div className={`mb-4 p-4 rounded-lg ${
+                state.gameStatus === 'won' ? 'bg-green-900/30' : 'bg-red-900/30'
+              }`}>
+                <p className={`leading-relaxed ${
+                  state.gameStatus === 'won' ? 'text-green-100' : 'text-red-100'
+                } whitespace-pre-wrap`}>
+                  {state.gameEnding}
+                </p>
+              </div>
+            )}
+
             <p className={`${
               state.gameStatus === 'won' ? 'text-green-300' : 'text-red-300'
             }`}>
               {state.gameStatus === 'won'
                 ? 'Congratulations on solving this supernatural mystery!'
-                : 'The supernatural forces proved too powerful this time.'}
+                : 'The supernatural forces proved too powerful this time.'
+              }
             </p>
           </motion.div>
         )}

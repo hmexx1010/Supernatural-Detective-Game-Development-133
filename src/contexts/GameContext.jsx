@@ -18,6 +18,7 @@ const initialState = {
   // Current Turn
   currentNarrative: '',
   currentChoices: [],
+  currentImage: null, // New: store current scene image
   turnNumber: 0,
 
   // Game History
@@ -33,10 +34,12 @@ const initialState = {
 
   // AI State
   isGenerating: false,
+  isGeneratingImage: false, // New: track image generation
   lastResponse: null,
 
   // Ending State
   gameEnding: null,
+  endingImage: null, // New: store ending image
   isGeneratingEnding: false
 };
 
@@ -66,7 +69,9 @@ function gameReducer(state, action) {
         inventory: [],
         currentNarrative: '',
         currentChoices: [],
+        currentImage: null,
         gameEnding: null,
+        endingImage: null,
         isGeneratingEnding: false
       };
 
@@ -75,7 +80,15 @@ function gameReducer(state, action) {
         ...state,
         currentNarrative: action.payload.narrative,
         currentChoices: action.payload.choices,
-        isGenerating: false
+        currentImage: action.payload.imageUrl || null,
+        isGenerating: false,
+        isGeneratingImage: false
+      };
+
+    case 'SET_GENERATING_IMAGE':
+      return {
+        ...state,
+        isGeneratingImage: action.payload
       };
 
     case 'MAKE_CHOICE':
@@ -93,6 +106,7 @@ function gameReducer(state, action) {
           {
             turn: state.turnNumber,
             narrative: state.currentNarrative,
+            image: state.currentImage,
             choice: choice,
             result: choice.result,
             scoreChange: choice.points,
@@ -140,7 +154,8 @@ function gameReducer(state, action) {
     case 'SET_GAME_ENDING':
       return {
         ...state,
-        gameEnding: action.payload,
+        gameEnding: action.payload.text || action.payload,
+        endingImage: action.payload.imageUrl || null,
         isGeneratingEnding: false
       };
 

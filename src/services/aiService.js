@@ -12,8 +12,7 @@ export async function generateGameContent(gameState, apiKey) {
 
   const openai = new OpenAI({
     apiKey: apiKey,
-    dangerouslyAllowBrowser: true
-    // Removed timeout to let it take as long as needed
+    dangerouslyAllowBrowser: true // Removed timeout to let it take as long as needed
   });
 
   const systemPrompt = `You are a game master for an immersive supernatural detective game. Guide the player, as '${gameState.detectiveName}', through a mystery involving '${gameState.supernaturalElement}' in '${gameState.primaryLocation}'. The goal is '${gameState.mainObjective}'.
@@ -54,13 +53,13 @@ RESPONSE FORMAT - Return ONLY valid JSON:
       "result": "What happens if this choice is selected - explain why this choice earned its point value"
     },
     {
-      "text": "Concise action description without point hints", 
+      "text": "Concise action description without point hints",
       "points": [different value from above],
       "result": "Consequence explanation matching the point value"
     },
     {
       "text": "Concise action description without point hints",
-      "points": [different value from above], 
+      "points": [different value from above],
       "result": "Consequence explanation matching the point value"
     },
     {
@@ -144,11 +143,20 @@ Ensure each choice feels distinct and the point values make logical sense for th
         }
 
         console.log('Response validation successful');
-        return parsed;
 
+        // Generate image for the scene
+        try {
+          const imageUrl = await generateSceneImage(gameState, parsed.narrative, apiKey);
+          parsed.imageUrl = imageUrl;
+          console.log('Scene image generated successfully');
+        } catch (imageError) {
+          console.warn('Failed to generate scene image:', imageError);
+          // Continue without image - don't fail the entire request
+        }
+
+        return parsed;
       } catch (parseError) {
         console.error('Failed to parse AI response:', content);
-        
         // Try to extract JSON from response if it's wrapped in other text
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -160,19 +168,16 @@ Ensure each choice feels distinct and the point values make logical sense for th
             console.error('Failed to extract JSON:', extractError);
           }
         }
-        
+
         lastError = new Error('Invalid response format from AI - could not parse JSON');
         if (attempt === maxRetries) throw lastError;
       }
-
     } catch (error) {
       console.error(`OpenAI API error on attempt ${attempt}:`, error);
       lastError = error;
 
       // Don't retry on certain errors
-      if (error.code === 'invalid_api_key' || 
-          error.code === 'insufficient_quota' || 
-          error.message.includes('Invalid API key format')) {
+      if (error.code === 'invalid_api_key' || error.code === 'insufficient_quota' || error.message.includes('Invalid API key format')) {
         break;
       }
 
@@ -210,7 +215,7 @@ export async function generateGameEnding(gameState, apiKey, isVictory) {
   });
 
   // Create a detailed history summary for the AI
-  const choicesSummary = gameState.history.map((entry, index) => 
+  const choicesSummary = gameState.history.map((entry, index) =>
     `Turn ${entry.turn}: ${entry.choice.text} (Result: ${entry.result})`
   ).join('\n');
 
@@ -225,16 +230,13 @@ CRITICAL REQUIREMENTS:
 - Make it feel like a proper conclusion to THIS specific story
 - Length should be 3-4 compelling paragraphs
 
-${isVictory ? 
-`VICTORY ENDING MUST INCLUDE:
+${isVictory ? `VICTORY ENDING MUST INCLUDE:
 - How the supernatural threat is defeated/resolved
 - The mystery revealed and explained
-- The detective's heroic actions celebrated  
+- The detective's heroic actions celebrated
 - The location/people saved and restored
 - A sense of hope and triumph
-- Reference to successful investigation techniques or brave choices` :
-
-`DEFEAT ENDING MUST INCLUDE:
+- Reference to successful investigation techniques or brave choices` : `DEFEAT ENDING MUST INCLUDE:
 - How the supernatural forces overwhelmed the investigation
 - The consequences of failure on the location and people
 - The detective's fate (consumed, lost, defeated)
@@ -274,18 +276,246 @@ Return ONLY the ending narrative text - no JSON formatting, no extra structure, 
 
     const ending = completion.choices[0].message.content.trim();
     console.log(`${isVictory ? 'Victory' : 'Defeat'} ending generated successfully`);
-    return ending;
 
+    // Generate ending image
+    let endingImageUrl = null;
+    try {
+      endingImageUrl = await generateEndingImage(gameState, ending, isVictory, apiKey);
+      console.log('Ending image generated successfully');
+    } catch (imageError) {
+      console.warn('Failed to generate ending image:', imageError);
+    }
+
+    return { text: ending, imageUrl: endingImageUrl };
   } catch (error) {
     console.error('Error generating game ending:', error);
     
     // Fallback endings if AI fails
-    if (isVictory) {
-      return `Detective ${gameState.detectiveName} stands triumphant in the ${gameState.primaryLocation}, having successfully confronted the ${gameState.supernaturalElement}. Through keen investigation and brave choices, the supernatural threat has been neutralized. The ${gameState.mainObjective} has been achieved, and the area is finally safe. The detective's name will be remembered as the one who brought light to darkness and hope to despair.`;
-    } else {
-      return `The shadows close in around Detective ${gameState.detectiveName} in the ${gameState.primaryLocation}. The ${gameState.supernaturalElement} has proven too powerful, too cunning for mortal investigation. The ${gameState.mainObjective} remains unfulfilled, and the supernatural forces claim victory. In the end, some mysteries are meant to remain unsolved, and some battles are destined to be lost to the darkness.`;
-    }
+    const fallbackEnding = isVictory 
+      ? `Detective ${gameState.detectiveName} stands triumphant in the ${gameState.primaryLocation}, having successfully confronted the ${gameState.supernaturalElement}. Through keen investigation and brave choices, the supernatural threat has been neutralized. The ${gameState.mainObjective} has been achieved, and the area is finally safe. The detective's name will be remembered as the one who brought light to darkness and hope to despair.`
+      : `The shadows close in around Detective ${gameState.detectiveName} in the ${gameState.primaryLocation}. The ${gameState.supernaturalElement} has proven too powerful, too cunning for mortal investigation. The ${gameState.mainObjective} remains unfulfilled, and the supernatural forces claim victory. In the end, some mysteries are meant to remain unsolved, and some battles are destined to be lost to the darkness.`;
+    
+    return { text: fallbackEnding, imageUrl: null };
   }
+}
+
+export async function generateSceneImage(gameState, narrative, apiKey) {
+  if (!apiKey) {
+    throw new Error('OpenAI API key is required');
+  }
+
+  const openai = new OpenAI({
+    apiKey: apiKey,
+    dangerouslyAllowBrowser: true
+  });
+
+  // Build character consistency context
+  const characterContext = buildCharacterContext(gameState);
+  
+  // Create detailed image prompt
+  const imagePrompt = `Create a cinematic supernatural detective scene: ${narrative}
+
+CHARACTER CONSISTENCY:
+${characterContext}
+
+VISUAL STYLE:
+- Film noir aesthetic with supernatural elements
+- Dramatic lighting and atmospheric shadows
+- Rich, moody color palette with selective neon highlights
+- Detailed character expressions and body language
+- Weather and environmental effects that match the mood
+
+SCENE DETAILS:
+- Location: ${gameState.primaryLocation}
+- Supernatural Element: ${gameState.supernaturalElement}
+- Current atmosphere should reflect the tension and mystery
+- Include visual clues or supernatural manifestations
+- Maintain consistent character appearance throughout the story
+
+TECHNICAL REQUIREMENTS:
+- High detail, photorealistic style
+- Cinematic composition and framing
+- Professional lighting and shadows
+- 16:9 aspect ratio suitable for game interface`;
+
+  try {
+    console.log('Generating scene image...');
+    
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: imagePrompt,
+      n: 1,
+      size: "1792x1024",
+      quality: "standard",
+      style: "vivid"
+    });
+
+    if (!response.data || response.data.length === 0) {
+      throw new Error('No image generated from OpenAI API');
+    }
+
+    const imageUrl = response.data[0].url;
+    console.log('Scene image generated successfully');
+    return imageUrl;
+  } catch (error) {
+    console.error('Error generating scene image:', error);
+    throw error;
+  }
+}
+
+export async function generateEndingImage(gameState, endingText, isVictory, apiKey) {
+  if (!apiKey) {
+    throw new Error('OpenAI API key is required');
+  }
+
+  const openai = new OpenAI({
+    apiKey: apiKey,
+    dangerouslyAllowBrowser: true
+  });
+
+  // Build character consistency context
+  const characterContext = buildCharacterContext(gameState);
+  
+  // Create detailed ending image prompt
+  const imagePrompt = `Create a dramatic ${isVictory ? 'triumphant victory' : 'haunting defeat'} ending scene: ${endingText}
+
+CHARACTER CONSISTENCY:
+${characterContext}
+
+${isVictory ? 'VICTORY SCENE REQUIREMENTS:' : 'DEFEAT SCENE REQUIREMENTS:'}
+${isVictory 
+  ? `- Uplifting and heroic atmosphere
+- Bright, hopeful lighting breaking through darkness
+- Detective in confident, victorious pose
+- Supernatural threat visibly defeated or banished
+- Environment showing restoration and peace
+- Celebratory or relieved expressions
+- Dawn/sunrise lighting symbolizing new hope`
+  : `- Dark, ominous atmosphere
+- Oppressive shadows and supernatural darkness
+- Detective overwhelmed or consumed by darkness
+- Supernatural forces triumphant and menacing
+- Environment corrupted or destroyed
+- Expressions of defeat, fear, or resignation
+- Storm/night setting emphasizing despair`}
+
+VISUAL STYLE:
+- Epic, cinematic composition
+- Film noir meets supernatural horror/triumph
+- Highly detailed and emotionally impactful
+- Dramatic use of light and shadow
+- Rich atmospheric effects
+- Professional movie poster quality
+
+SCENE DETAILS:
+- Location: ${gameState.primaryLocation}
+- Supernatural Element: ${gameState.supernaturalElement}
+- This is the climactic final moment of the story
+- Include visual references to the detective's journey
+- Show the ultimate fate of both detective and supernatural forces
+
+TECHNICAL REQUIREMENTS:
+- Ultra high detail, cinematic quality
+- Perfect composition and dramatic framing
+- Professional lighting and atmospheric effects
+- 16:9 aspect ratio
+- Emotionally powerful and memorable imagery`;
+
+  try {
+    console.log(`Generating ${isVictory ? 'victory' : 'defeat'} ending image...`);
+    
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: imagePrompt,
+      n: 1,
+      size: "1792x1024",
+      quality: "hd",
+      style: "vivid"
+    });
+
+    if (!response.data || response.data.length === 0) {
+      throw new Error('No ending image generated from OpenAI API');
+    }
+
+    const imageUrl = response.data[0].url;
+    console.log(`${isVictory ? 'Victory' : 'Defeat'} ending image generated successfully`);
+    return imageUrl;
+  } catch (error) {
+    console.error('Error generating ending image:', error);
+    throw error;
+  }
+}
+
+function buildCharacterContext(gameState) {
+  // Infer character appearance from detective name and setting
+  const detectiveName = gameState.detectiveName || 'Detective';
+  const nameAnalysis = analyzeDetectiveName(detectiveName);
+  
+  return `DETECTIVE ${detectiveName.toUpperCase()}:
+- ${nameAnalysis.appearance}
+- ${nameAnalysis.clothing}
+- ${nameAnalysis.demeanor}
+- Consistent facial features, build, and style throughout all scenes
+- Professional detective bearing with supernatural investigation experience
+
+SUPERNATURAL CONTEXT:
+- Primary threat: ${gameState.supernaturalElement}
+- Investigation location: ${gameState.primaryLocation}
+- Mission: ${gameState.mainObjective}
+- Current investigation progress: ${gameState.currentScore}/8
+- Story turn: ${gameState.turnNumber}
+
+VISUAL CONTINUITY NOTES:
+- Maintain exact same character design across all generated images
+- Keep clothing, hairstyle, and physical features identical
+- Show progression of wear/fatigue as story advances
+- Supernatural elements should have consistent visual representation
+- Location should show accumulated investigation effects`;
+}
+
+function analyzeDetectiveName(name) {
+  // Basic name analysis for character appearance inference
+  const lowerName = name.toLowerCase();
+  
+  // Gender inference (simplified)
+  const maleNames = ['john', 'james', 'michael', 'david', 'william', 'richard', 'thomas', 'charles', 'christopher', 'daniel', 'matthew', 'anthony', 'mark', 'donald', 'steven', 'samuel', 'kenneth', 'joshua', 'kevin', 'brian', 'george', 'edward', 'ronald', 'timothy', 'jason', 'jeffrey', 'ryan', 'jacob', 'gary', 'nicholas', 'eric', 'jonathan', 'stephen', 'larry', 'justin', 'scott', 'brandon', 'benjamin', 'samuel', 'gregory', 'alexander', 'frank', 'raymond', 'jack', 'dennis', 'jerry', 'tyler', 'aaron', 'jose', 'henry', 'adam', 'douglas', 'nathan', 'peter', 'zachary', 'kyle', 'noah', 'alan', 'ethan', 'jeremy', 'lionel', 'andrew', 'joshua', 'wayne', 'elijah', 'mason', 'robert', 'harold', 'arthur', 'victor', 'magnus', 'ezra'];
+  const femaleNames = ['mary', 'patricia', 'jennifer', 'linda', 'elizabeth', 'barbara', 'susan', 'jessica', 'sarah', 'karen', 'nancy', 'lisa', 'betty', 'helen', 'sandra', 'donna', 'carol', 'ruth', 'sharon', 'michelle', 'laura', 'sarah', 'kimberly', 'deborah', 'dorothy', 'lisa', 'nancy', 'karen', 'betty', 'helen', 'sandra', 'donna', 'carol', 'ruth', 'sharon', 'michelle', 'laura', 'sarah', 'kimberly', 'deborah', 'dorothy', 'amy', 'angela', 'ashley', 'brenda', 'emma', 'olivia', 'cynthia', 'marie', 'janet', 'catherine', 'frances', 'christine', 'samantha', 'debra', 'rachel', 'carolyn', 'janet', 'virginia', 'maria', 'heather', 'diane', 'julie', 'joyce', 'victoria', 'kelly', 'christina', 'joan', 'evelyn', 'lauren', 'judith', 'megan', 'cheryl', 'andrea', 'hannah', 'jacqueline', 'martha', 'gloria', 'sara', 'janice', 'julia', 'kathryn', 'alice', 'teresa', 'sophia', 'frances', 'anna', 'diana', 'brittany', 'charlotte', 'marie', 'kayla', 'alexis', 'lori', 'rose'];
+  
+  const firstName = lowerName.split(' ')[0];
+  const isMale = maleNames.some(male => firstName.includes(male));
+  const isFemale = femaleNames.some(female => firstName.includes(female));
+  
+  // Style inference from name characteristics
+  const isClassic = /^(detective\s+)?(john|james|william|margaret|elizabeth|charles|victoria)/i.test(name);
+  const isModern = /^(detective\s+)?(alex|jordan|taylor|casey|morgan|riley|dakota|sage)/i.test(name);
+  const isUnique = !isClassic && !isModern;
+  
+  // Generate appearance based on analysis
+  let appearance, clothing, demeanor;
+  
+  if (isFemale) {
+    appearance = isClassic 
+      ? "Professional woman in her 30s-40s, determined expression, shoulder-length dark hair, piercing intelligent eyes"
+      : isModern
+      ? "Contemporary woman detective, confident posture, modern hairstyle, sharp observational gaze"
+      : "Distinctive woman investigator with unique features, professional bearing, focused intensity";
+  } else {
+    appearance = isClassic
+      ? "Distinguished man in his 30s-40s, strong jawline, graying temples, weathered but intelligent face"
+      : isModern  
+      ? "Contemporary male detective, athletic build, modern appearance, alert and analytical expression"
+      : "Unique male investigator with distinctive features, professional demeanor, intense focus";
+  }
+  
+  clothing = isClassic
+    ? "Classic detective attire: long trench coat, fedora hat, formal dress shirt, leather shoes, vintage badge"
+    : isModern
+    ? "Modern detective gear: tactical jacket, professional casual wear, badge visible, practical footwear"
+    : "Distinctive investigative outfit that reflects their unique approach to supernatural cases";
+    
+  demeanor = "Confident professional investigator, experienced in supernatural cases, alert and observant, carrying the weight of the investigation";
+  
+  return { appearance, clothing, demeanor };
 }
 
 export async function generateSpeech(text, voice = 'alloy', apiKey = null) {
@@ -319,7 +549,7 @@ export async function generateSpeech(text, voice = 'alloy', apiKey = null) {
     if (apiKey && apiKey.trim() !== '') {
       return await generateElevenLabsSpeech(cleanText, apiKey);
     }
-
+    
     // Fallback to OpenAI TTS if available
     return await generateOpenAISpeech(cleanText, voice);
   } catch (error) {
@@ -439,8 +669,7 @@ export async function testOpenAIConnection(apiKey) {
   try {
     const openai = new OpenAI({
       apiKey: apiKey,
-      dangerouslyAllowBrowser: true
-      // No timeout for test either
+      dangerouslyAllowBrowser: true // No timeout for test either
     });
 
     // Simple test call

@@ -6,7 +6,7 @@ import { useSpeech } from '../hooks/useSpeech';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiRefreshCw, FiHome, FiBook, FiEye, FiVolume2, FiVolumeX, FiPause, FiAlertTriangle, FiWifi, FiWifiOff } = FiIcons;
+const { FiRefreshCw, FiHome, FiBook, FiEye, FiVolume2, FiVolumeX, FiPause, FiAlertTriangle, FiWifi, FiWifiOff, FiImage } = FiIcons;
 
 const GamePlay = () => {
   const { state, dispatch } = useGame();
@@ -37,7 +37,6 @@ const GamePlay = () => {
       setIsOnline(true);
       console.log('Connection restored');
     };
-    
     const handleOffline = () => {
       setIsOnline(false);
       console.log('Connection lost');
@@ -92,11 +91,9 @@ const GamePlay = () => {
     ) {
       hasSpokenNarrativeRef.current.add(state.currentNarrative);
       lastNarrativeRef.current = state.currentNarrative;
-
       const timeoutId = setTimeout(() => {
         speakNarrative(state.currentNarrative);
       }, 1000);
-
       return () => clearTimeout(timeoutId);
     }
   }, [state.currentNarrative, state.speechEnabled, showResult, speakNarrative, speechBusy, isProcessingChoice]);
@@ -107,16 +104,16 @@ const GamePlay = () => {
       const timeoutId = setTimeout(() => {
         speakNarrative(state.gameEnding);
       }, 1000);
-
       return () => clearTimeout(timeoutId);
     }
   }, [state.gameEnding, state.speechEnabled, speechBusy, speakNarrative]);
 
   const generateOpeningNarrative = async () => {
     dispatch({ type: 'SET_GENERATING', payload: true });
+    dispatch({ type: 'SET_GENERATING_IMAGE', payload: true });
     
     try {
-      console.log('Generating opening narrative...');
+      console.log('Generating opening narrative and image...');
       const content = await generateGameContent({
         detectiveName: state.detectiveName,
         supernaturalElement: state.supernaturalElement,
@@ -128,12 +125,13 @@ const GamePlay = () => {
         isOpening: true
       }, state.openaiApiKey);
 
-      console.log('Opening narrative generated successfully');
+      console.log('Opening narrative and image generated successfully');
       dispatch({
         type: 'SET_CURRENT_TURN',
         payload: {
           narrative: content.narrative,
-          choices: content.choices
+          choices: content.choices,
+          imageUrl: content.imageUrl
         }
       });
       setError(null);
@@ -141,6 +139,7 @@ const GamePlay = () => {
     } catch (error) {
       console.error('Error generating opening:', error);
       dispatch({ type: 'SET_GENERATING', payload: false });
+      dispatch({ type: 'SET_GENERATING_IMAGE', payload: false });
       setError(`Failed to generate opening: ${error.message}`);
     }
   };
@@ -151,25 +150,18 @@ const GamePlay = () => {
     try {
       console.log(`Generating ${isVictory ? 'victory' : 'defeat'} ending...`);
       const ending = await generateGameEnding(state, state.openaiApiKey, isVictory);
-      
       console.log(`${isVictory ? 'Victory' : 'Defeat'} ending generated successfully`);
-      dispatch({
-        type: 'SET_GAME_ENDING',
-        payload: ending
-      });
+      dispatch({ type: 'SET_GAME_ENDING', payload: ending });
     } catch (error) {
       console.error('Error generating ending:', error);
       dispatch({ type: 'SET_GENERATING_ENDING', payload: false });
       
       // Set fallback ending if generation fails
-      const fallbackEnding = isVictory 
+      const fallbackEnding = isVictory
         ? `Detective ${state.detectiveName} stands triumphant, having successfully confronted the ${state.supernaturalElement} in ${state.primaryLocation}. The supernatural threat has been neutralized, and the ${state.mainObjective} has been achieved. Victory belongs to those who dare to face the unknown.`
         : `The darkness claims Detective ${state.detectiveName} in the ${state.primaryLocation}. The ${state.supernaturalElement} has proven too powerful, and the ${state.mainObjective} remains unfulfilled. Some mysteries are destined to remain unsolved, consumed by the shadows of the supernatural realm.`;
       
-      dispatch({
-        type: 'SET_GAME_ENDING',
-        payload: fallbackEnding
-      });
+      dispatch({ type: 'SET_GAME_ENDING', payload: { text: fallbackEnding, imageUrl: null } });
     }
   };
 
@@ -217,6 +209,7 @@ const GamePlay = () => {
 
       if (newStatus === 'playing') {
         dispatch({ type: 'SET_GENERATING', payload: true });
+        dispatch({ type: 'SET_GENERATING_IMAGE', payload: true });
         
         try {
           console.log('Generating next turn...');
@@ -237,12 +230,14 @@ const GamePlay = () => {
             type: 'SET_CURRENT_TURN',
             payload: {
               narrative: content.narrative,
-              choices: content.choices
+              choices: content.choices,
+              imageUrl: content.imageUrl
             }
           });
         } catch (error) {
           console.error('Error generating next turn:', error);
           dispatch({ type: 'SET_GENERATING', payload: false });
+          dispatch({ type: 'SET_GENERATING_IMAGE', payload: false });
           setError(`Failed to generate next turn: ${error.message}`);
         }
       }
@@ -275,6 +270,7 @@ const GamePlay = () => {
       }, 100);
     } else if (state.isGenerating) {
       dispatch({ type: 'SET_GENERATING', payload: false });
+      dispatch({ type: 'SET_GENERATING_IMAGE', payload: false });
     }
   };
 
@@ -416,7 +412,7 @@ const GamePlay = () => {
                       {isOnline ? 'Connected' : 'Offline'}
                     </span>
                   </div>
-
+                  
                   <div className="flex gap-2">
                     <motion.button
                       whileHover={{ scale: 1.05 }}
@@ -454,7 +450,7 @@ const GamePlay = () => {
               <div className="text-center">
                 <div className="text-6xl mb-4">🎉</div>
                 <h3 className="text-2xl font-bold text-green-400 mb-4">Case Solved!</h3>
-                
+
                 {/* Voice Controls for Ending */}
                 {speechEnabled && state.gameEnding && (
                   <div className="flex justify-center mb-4">
@@ -464,9 +460,7 @@ const GamePlay = () => {
                       onClick={handleSpeakNarrative}
                       disabled={isSpeechGenerating}
                       className={`p-2 rounded-lg transition-colors ${
-                        speechBusy
-                          ? 'bg-red-600 hover:bg-red-500 text-white'
-                          : 'bg-green-600 hover:bg-green-500 text-white'
+                        speechBusy ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white'
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                       title={speechBusy ? 'Stop narration' : 'Play victory ending'}
                     >
@@ -483,6 +477,19 @@ const GamePlay = () => {
                         <SafeIcon icon={FiVolume2} className="w-4 h-4" />
                       )}
                     </motion.button>
+                  </div>
+                )}
+
+                {/* Victory Ending Image */}
+                {state.endingImage && (
+                  <div className="mb-6">
+                    <motion.img
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      src={state.endingImage}
+                      alt="Victory ending scene"
+                      className="w-full max-w-2xl mx-auto rounded-lg shadow-2xl border border-green-500/30"
+                    />
                   </div>
                 )}
 
@@ -534,7 +541,7 @@ const GamePlay = () => {
               <div className="text-center">
                 <div className="text-6xl mb-4">💀</div>
                 <h3 className="text-2xl font-bold text-red-400 mb-4">Case Failed</h3>
-                
+
                 {/* Voice Controls for Ending */}
                 {speechEnabled && state.gameEnding && (
                   <div className="flex justify-center mb-4">
@@ -544,9 +551,7 @@ const GamePlay = () => {
                       onClick={handleSpeakNarrative}
                       disabled={isSpeechGenerating}
                       className={`p-2 rounded-lg transition-colors ${
-                        speechBusy
-                          ? 'bg-orange-600 hover:bg-orange-500 text-white'
-                          : 'bg-red-600 hover:bg-red-500 text-white'
+                        speechBusy ? 'bg-orange-600 hover:bg-orange-500 text-white' : 'bg-red-600 hover:bg-red-500 text-white'
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                       title={speechBusy ? 'Stop narration' : 'Play defeat ending'}
                     >
@@ -563,6 +568,19 @@ const GamePlay = () => {
                         <SafeIcon icon={FiVolume2} className="w-4 h-4" />
                       )}
                     </motion.button>
+                  </div>
+                )}
+
+                {/* Defeat Ending Image */}
+                {state.endingImage && (
+                  <div className="mb-6">
+                    <motion.img
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      src={state.endingImage}
+                      alt="Defeat ending scene"
+                      className="w-full max-w-2xl mx-auto rounded-lg shadow-2xl border border-red-500/30"
+                    />
                   </div>
                 )}
 
@@ -631,12 +649,19 @@ const GamePlay = () => {
                   {!isOnline && (
                     <p className="mt-2 text-red-400">⚠️ No internet connection detected</p>
                   )}
+                  {state.isGeneratingImage && (
+                    <p className="mt-2 text-cyan-400 flex items-center justify-center gap-2">
+                      <SafeIcon icon={FiImage} className="w-4 h-4" />
+                      Generating scene artwork...
+                    </p>
+                  )}
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     dispatch({ type: 'SET_GENERATING', payload: false });
+                    dispatch({ type: 'SET_GENERATING_IMAGE', payload: false });
                     setError('Generation cancelled by user');
                   }}
                   className="mt-4 bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-lg text-sm"
@@ -646,6 +671,19 @@ const GamePlay = () => {
               </div>
             ) : (
               <>
+                {/* Scene Image */}
+                {state.currentImage && (
+                  <div className="mb-6">
+                    <motion.img
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      src={state.currentImage}
+                      alt="Current scene"
+                      className="w-full rounded-lg shadow-2xl border border-slate-600/50"
+                    />
+                  </div>
+                )}
+
                 {/* Voice Controls */}
                 {speechEnabled && (
                   <div className="flex justify-between items-center mb-4">
@@ -656,9 +694,7 @@ const GamePlay = () => {
                         onClick={handleSpeakNarrative}
                         disabled={isSpeechGenerating || isProcessingChoice}
                         className={`p-2 rounded-lg transition-colors ${
-                          speechBusy
-                            ? 'bg-red-600 hover:bg-red-500 text-white'
-                            : 'bg-amber-600 hover:bg-amber-500 text-white'
+                          speechBusy ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-amber-600 hover:bg-amber-500 text-white'
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                         title={speechBusy ? 'Stop narration' : 'Play narration'}
                       >
