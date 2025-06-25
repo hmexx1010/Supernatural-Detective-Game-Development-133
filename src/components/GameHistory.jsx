@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiBook, FiClock, FiTrendingUp, FiTrendingDown, FiMinus, FiStar, FiSkull, FiImage } = FiIcons;
+const { FiBook, FiClock, FiTrendingUp, FiTrendingDown, FiMinus, FiStar, FiSkull, FiImage, FiLink, FiArrowRight } = FiIcons;
 
 const GameHistory = () => {
   const { state } = useGame();
@@ -26,6 +26,40 @@ const GameHistory = () => {
     if (points === -1) return 'Poor (-1)';
     if (points === -2) return 'Very Bad (-2)';
     return 'Unknown';
+  };
+
+  // Analyze story flow connections
+  const analyzeStoryFlow = (currentEntry, nextEntry) => {
+    if (!nextEntry) return null;
+    
+    const currentResult = currentEntry.result.toLowerCase();
+    const nextNarrative = nextEntry.narrative.toLowerCase();
+    
+    // Look for narrative connections
+    const connections = [];
+    
+    // Check for direct references
+    const currentWords = currentResult.split(' ').filter(word => word.length > 4);
+    const nextWords = nextNarrative.split(' ').filter(word => word.length > 4);
+    
+    const sharedWords = currentWords.filter(word => 
+      nextWords.some(nextWord => nextWord.includes(word.substring(0, 4)))
+    );
+    
+    if (sharedWords.length > 0) {
+      connections.push('Direct narrative continuation detected');
+    }
+    
+    // Check for consequence patterns
+    if (currentEntry.scoreChange < 0 && nextNarrative.includes('consequence')) {
+      connections.push('Consequences from previous mistake');
+    }
+    
+    if (currentEntry.scoreChange > 0 && (nextNarrative.includes('advantage') || nextNarrative.includes('success'))) {
+      connections.push('Building on previous success');
+    }
+    
+    return connections.length > 0 ? connections : null;
   };
 
   if (!state.gameStarted || state.history.length === 0) {
@@ -70,14 +104,14 @@ const GameHistory = () => {
           </div>
         </motion.div>
 
-        {/* Game Summary */}
+        {/* Game Summary with Story Analysis */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-slate-800/90 backdrop-blur-sm rounded-xl p-6 mb-6 border border-slate-700/50"
         >
-          <h2 className="text-xl font-semibold text-amber-400 mb-4">Case Summary</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <h2 className="text-xl font-semibold text-amber-400 mb-4">Case Summary & Story Analysis</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             <div className="bg-slate-700/30 rounded-lg p-4">
               <div className="text-2xl font-bold text-white">{state.currentScore}</div>
               <div className="text-slate-400 text-sm">Current Score</div>
@@ -105,12 +139,36 @@ const GameHistory = () => {
               <div className="text-slate-400 text-sm">Poor Choices</div>
             </div>
           </div>
+
+          {/* Story Flow Analysis */}
+          <div className="bg-slate-700/20 rounded-lg p-4">
+            <h3 className="text-amber-400 font-medium mb-2">Story Continuity Analysis</h3>
+            <div className="text-sm text-slate-300">
+              <p className="mb-2">
+                <strong>Investigation Momentum:</strong> {state.getStoryMomentum?.() || 'neutral'}
+              </p>
+              {state.getLastSignificantEvent && state.getLastSignificantEvent() && (
+                <p className="mb-2">
+                  <strong>Last Significant Event:</strong> Turn {state.getLastSignificantEvent().turn} - 
+                  {state.getLastSignificantEvent().scoreChange > 0 ? ' Major Success' : ' Critical Failure'}
+                </p>
+              )}
+              {state.getStoryThemes && state.getStoryThemes().length > 0 && (
+                <p>
+                  <strong>Investigation Style:</strong> {state.getStoryThemes().join(', ')}
+                </p>
+              )}
+            </div>
+          </div>
         </motion.div>
 
-        {/* History Timeline */}
+        {/* History Timeline with Story Connections */}
         <div className="space-y-4">
           {state.history.map((entry, index) => {
             const choiceInfo = getChoiceIcon(entry.scoreChange);
+            const nextEntry = state.history[index + 1] || null;
+            const storyConnections = analyzeStoryFlow(entry, nextEntry);
+
             return (
               <motion.div
                 key={index}
@@ -177,12 +235,39 @@ const GameHistory = () => {
                 </div>
 
                 {/* Result */}
-                <div>
+                <div className="mb-4">
                   <h4 className="text-amber-400 font-medium mb-2">Outcome:</h4>
                   <div className="bg-slate-700/30 rounded-lg p-4">
                     <p className="text-slate-200">{entry.result}</p>
                   </div>
                 </div>
+
+                {/* Story Continuity Connections */}
+                {storyConnections && (
+                  <div className="mb-4">
+                    <h4 className="text-cyan-400 font-medium mb-2 flex items-center gap-2">
+                      <SafeIcon icon={FiLink} className="w-4 h-4" />
+                      Story Connections:
+                    </h4>
+                    <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-3">
+                      {storyConnections.map((connection, idx) => (
+                        <p key={idx} className="text-cyan-200 text-sm">
+                          • {connection}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Flow to Next Scene */}
+                {nextEntry && (
+                  <div className="border-t border-slate-600/50 pt-4">
+                    <div className="flex items-center gap-2 text-slate-400 text-sm">
+                      <SafeIcon icon={FiArrowRight} className="w-4 h-4" />
+                      <span>This outcome directly influenced Turn {nextEntry.turn}</span>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             );
           })}
@@ -220,7 +305,7 @@ const GameHistory = () => {
             }`}>
               {state.gameStatus === 'won' ? 'Case Solved!' : 'Case Failed'}
             </h3>
-            
+
             {/* Ending Text */}
             {state.gameEnding && (
               <div className={`mb-4 p-4 rounded-lg ${
@@ -239,9 +324,19 @@ const GameHistory = () => {
             }`}>
               {state.gameStatus === 'won'
                 ? 'Congratulations on solving this supernatural mystery!'
-                : 'The supernatural forces proved too powerful this time.'
-              }
+                : 'The supernatural forces proved too powerful this time.'}
             </p>
+
+            {/* Story Analysis for Ending */}
+            <div className="mt-4 p-4 bg-slate-700/30 rounded-lg">
+              <h4 className="text-amber-400 font-medium mb-2">Final Story Analysis</h4>
+              <div className="text-sm text-slate-300 text-left">
+                <p><strong>Total Investigation Length:</strong> {state.history.length} critical decisions</p>
+                <p><strong>Final Score:</strong> {state.currentScore}/{state.maxScore}</p>
+                <p><strong>Story Consistency:</strong> Each choice built upon previous outcomes</p>
+                <p><strong>Narrative Flow:</strong> Continuous story progression maintained throughout</p>
+              </div>
+            </div>
           </motion.div>
         )}
       </div>

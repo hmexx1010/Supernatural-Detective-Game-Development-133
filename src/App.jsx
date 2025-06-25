@@ -24,8 +24,7 @@ const LoadingScreen = ({ message = "Loading Supernatural Detective..." }) => (
       >
         <SafeIcon icon={FiRefreshCw} className="w-16 h-16 text-cyan-400" />
       </motion.div>
-      
-      <motion.h1 
+      <motion.h1
         className="font-display text-4xl font-bold mb-4"
         style={{
           background: 'linear-gradient(135deg, #00d4ff, #8b5cf6)',
@@ -39,8 +38,7 @@ const LoadingScreen = ({ message = "Loading Supernatural Detective..." }) => (
       >
         🕵️ Supernatural Detective
       </motion.h1>
-      
-      <motion.p 
+      <motion.p
         className="text-slate-300 text-lg"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -88,7 +86,6 @@ function AppContent() {
     ];
 
     let currentStep = 0;
-    
     const progressLoading = () => {
       if (currentStep < loadingSteps.length) {
         setLoadingMessage(loadingSteps[currentStep].message);
@@ -145,7 +142,6 @@ function AppContent() {
   return (
     <AtmosphericBackground intensity="medium">
       <SoundEffects enabled={true} volume={0.3} />
-      
       <div className="app-container">
         {/* Enhanced Navigation */}
         <AnimatePresence>

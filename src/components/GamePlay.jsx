@@ -6,7 +6,10 @@ import { useSpeech } from '../hooks/useSpeech';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiRefreshCw, FiHome, FiBook, FiEye, FiVolume2, FiVolumeX, FiPause, FiAlertTriangle, FiWifi, FiWifiOff, FiImage } = FiIcons;
+const {
+  FiRefreshCw, FiHome, FiBook, FiEye, FiVolume2, FiVolumeX, FiPause,
+  FiAlertTriangle, FiWifi, FiWifiOff, FiImage
+} = FiIcons;
 
 const GamePlay = () => {
   const { state, dispatch } = useGame();
@@ -17,18 +20,15 @@ const GamePlay = () => {
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Track narration progress
   const hasSpokenNarrativeRef = useRef(new Set());
   const lastNarrativeRef = useRef('');
 
   const {
-    speak,
-    speakNarrative,
-    stopAudio,
-    isPlaying,
-    isGenerating: isSpeechGenerating,
-    error: speechError,
-    isEnabled: speechEnabled,
-    isBusy: speechBusy
+    speak, speakNarrative, stopAudio, isPlaying,
+    isGenerating: isSpeechGenerating, error: speechError,
+    isEnabled: speechEnabled, isBusy: speechBusy
   } = useSpeech();
 
   // Monitor online status
@@ -78,7 +78,7 @@ const GamePlay = () => {
     }
   }, [state.gameStarted]);
 
-  // Auto-speak narrative when it changes (prevent duplicates)
+  // Auto-speak narrative when it changes (prevent duplicates) - DISABLED DURING CHOICE PROCESSING
   useEffect(() => {
     if (
       state.currentNarrative &&
@@ -91,27 +91,31 @@ const GamePlay = () => {
     ) {
       hasSpokenNarrativeRef.current.add(state.currentNarrative);
       lastNarrativeRef.current = state.currentNarrative;
+
       const timeoutId = setTimeout(() => {
         speakNarrative(state.currentNarrative);
       }, 1000);
+
       return () => clearTimeout(timeoutId);
     }
   }, [state.currentNarrative, state.speechEnabled, showResult, speakNarrative, speechBusy, isProcessingChoice]);
 
   // Auto-speak game ending when it's generated
   useEffect(() => {
-    if (state.gameEnding && state.speechEnabled && !speechBusy) {
+    if (state.gameEnding && state.speechEnabled && !speechBusy && !isProcessingChoice) {
       const timeoutId = setTimeout(() => {
         speakNarrative(state.gameEnding);
       }, 1000);
+
       return () => clearTimeout(timeoutId);
     }
-  }, [state.gameEnding, state.speechEnabled, speechBusy, speakNarrative]);
+  }, [state.gameEnding, state.speechEnabled, speechBusy, speakNarrative, isProcessingChoice]);
 
+  // Opening narrative generation with robust error handling
   const generateOpeningNarrative = async () => {
     dispatch({ type: 'SET_GENERATING', payload: true });
     dispatch({ type: 'SET_GENERATING_IMAGE', payload: true });
-    
+
     try {
       console.log('Generating opening narrative and image...');
       const content = await generateGameContent({
@@ -125,15 +129,25 @@ const GamePlay = () => {
         isOpening: true
       }, state.openaiApiKey);
 
-      console.log('Opening narrative and image generated successfully');
+      console.log('Opening narrative generated successfully');
+
+      // Always set the content, even if image is null
       dispatch({
         type: 'SET_CURRENT_TURN',
         payload: {
           narrative: content.narrative,
           choices: content.choices,
-          imageUrl: content.imageUrl
+          imageUrl: content.imageUrl || null
         }
       });
+
+      // Log image status
+      if (content.imageUrl) {
+        console.log('✅ Scene image generated successfully:', content.imageUrl);
+      } else {
+        console.warn('⚠️ No scene image generated for opening turn');
+      }
+
       setError(null);
       setRetryCount(0);
     } catch (error) {
@@ -146,7 +160,7 @@ const GamePlay = () => {
 
   const generateEnding = async (isVictory) => {
     dispatch({ type: 'SET_GENERATING_ENDING', payload: true });
-    
+
     try {
       console.log(`Generating ${isVictory ? 'victory' : 'defeat'} ending...`);
       const ending = await generateGameEnding(state, state.openaiApiKey, isVictory);
@@ -155,16 +169,23 @@ const GamePlay = () => {
     } catch (error) {
       console.error('Error generating ending:', error);
       dispatch({ type: 'SET_GENERATING_ENDING', payload: false });
-      
+
       // Set fallback ending if generation fails
       const fallbackEnding = isVictory
         ? `Detective ${state.detectiveName} stands triumphant, having successfully confronted the ${state.supernaturalElement} in ${state.primaryLocation}. The supernatural threat has been neutralized, and the ${state.mainObjective} has been achieved. Victory belongs to those who dare to face the unknown.`
         : `The darkness claims Detective ${state.detectiveName} in the ${state.primaryLocation}. The ${state.supernaturalElement} has proven too powerful, and the ${state.mainObjective} remains unfulfilled. Some mysteries are destined to remain unsolved, consumed by the shadows of the supernatural realm.`;
-      
-      dispatch({ type: 'SET_GAME_ENDING', payload: { text: fallbackEnding, imageUrl: null } });
+
+      dispatch({
+        type: 'SET_GAME_ENDING',
+        payload: {
+          text: fallbackEnding,
+          imageUrl: null
+        }
+      });
     }
   };
 
+  // Optimized choice handling with seamless transitions
   const handleChoiceSelect = async (choice) => {
     if (isProcessingChoice || speechBusy) {
       return;
@@ -172,47 +193,54 @@ const GamePlay = () => {
 
     setIsProcessingChoice(true);
     setError(null);
+
+    // IMMEDIATELY stop all audio to prevent overlapping
     stopAudio();
     setSelectedChoice(choice);
     setShowResult(true);
 
     try {
-      // Update game state with choice
+      // Update game state with choice immediately
       dispatch({ type: 'MAKE_CHOICE', payload: choice });
 
-      // Speak the choice result if enabled
-      if (state.speechEnabled && choice.result) {
-        setTimeout(() => {
-          speak(choice.result);
-        }, 500);
-      }
-
-      // Wait for speech to complete
-      const waitForSpeech = () => {
-        return new Promise((resolve) => {
-          const checkSpeech = () => {
-            if (!speechBusy && !isPlaying && !isSpeechGenerating) {
-              resolve();
-            } else {
-              setTimeout(checkSpeech, 300);
-            }
-          };
-          setTimeout(checkSpeech, state.speechEnabled ? 2500 : 500);
-        });
-      };
-
-      await waitForSpeech();
-
-      // Generate next turn if game continues
+      // Calculate new score and status
       const newScore = Math.max(0, Math.min(state.maxScore, state.currentScore + choice.points));
       const newStatus = newScore >= state.maxScore ? 'won' : newScore <= 0 ? 'lost' : 'playing';
 
+      // Sequential narration if speech is enabled
+      if (state.speechEnabled) {
+        console.log('🎭 Starting sequential narration...');
+
+        // Step 1: Read the selected choice action
+        const choiceText = `${state.detectiveName} chooses: ${choice.text}`;
+        console.log('Step 1 - Speaking choice:', choiceText);
+        await speak(choiceText);
+
+        // Wait a brief moment between narrations
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Step 2: Read the result/outcome
+        const resultText = `${getScoreChangeText(choice.points)}. ${choice.result}`;
+        console.log('Step 2 - Speaking result:', resultText);
+        await speak(resultText);
+
+        console.log('✅ Sequential narration complete');
+
+        // Wait for final speech to settle
+        await new Promise(resolve => setTimeout(resolve, 800));
+      } else {
+        // If speech is disabled, just wait a moment for visual feedback
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+
+      // Handle next turn generation for continuing games
       if (newStatus === 'playing') {
-        dispatch({ type: 'SET_GENERATING', payload: true });
-        dispatch({ type: 'SET_GENERATING_IMAGE', payload: true });
-        
+        console.log('🔄 Transitioning to next turn...');
+
         try {
-          console.log('Generating next turn...');
+          dispatch({ type: 'SET_GENERATING', payload: true });
+          dispatch({ type: 'SET_GENERATING_IMAGE', payload: true });
+
           const content = await generateGameContent({
             detectiveName: state.detectiveName,
             supernaturalElement: state.supernaturalElement,
@@ -225,15 +253,16 @@ const GamePlay = () => {
             isOpening: false
           }, state.openaiApiKey);
 
-          console.log('Next turn generated successfully');
           dispatch({
             type: 'SET_CURRENT_TURN',
             payload: {
               narrative: content.narrative,
               choices: content.choices,
-              imageUrl: content.imageUrl
+              imageUrl: content.imageUrl || null
             }
           });
+
+          console.log('✅ Next turn generated successfully');
         } catch (error) {
           console.error('Error generating next turn:', error);
           dispatch({ type: 'SET_GENERATING', payload: false });
@@ -246,7 +275,7 @@ const GamePlay = () => {
       setError(`Error processing choice: ${error.message}`);
     }
 
-    // Reset choice state
+    // Reset choice state after everything is complete
     setTimeout(() => {
       setShowResult(false);
       setSelectedChoice(null);
@@ -257,7 +286,7 @@ const GamePlay = () => {
   const handleRetry = () => {
     setError(null);
     setRetryCount(prev => prev + 1);
-    
+
     if (!state.currentNarrative) {
       // Force re-initialization
       setHasInitialized(false);
@@ -404,7 +433,6 @@ const GamePlay = () => {
                 <div className="flex-1">
                   <h4 className="text-red-400 font-medium mb-1">Generation Error</h4>
                   <p className="text-red-300 text-sm mb-3">{error}</p>
-                  
                   {/* Connection status in error */}
                   <div className="flex items-center gap-2 mb-3 text-sm">
                     <SafeIcon icon={isOnline ? FiWifi : FiWifiOff} className={`w-4 h-4 ${isOnline ? 'text-green-400' : 'text-red-400'}`} />
@@ -412,7 +440,6 @@ const GamePlay = () => {
                       {isOnline ? 'Connected' : 'Offline'}
                     </span>
                   </div>
-                  
                   <div className="flex gap-2">
                     <motion.button
                       whileHover={{ scale: 1.05 }}
@@ -459,9 +486,7 @@ const GamePlay = () => {
                       whileTap={{ scale: 0.95 }}
                       onClick={handleSpeakNarrative}
                       disabled={isSpeechGenerating}
-                      className={`p-2 rounded-lg transition-colors ${
-                        speechBusy ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      className={`p-2 rounded-lg transition-colors ${speechBusy ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white'} disabled:opacity-50 disabled:cursor-not-allowed`}
                       title={speechBusy ? 'Stop narration' : 'Play victory ending'}
                     >
                       {isSpeechGenerating ? (
@@ -489,6 +514,10 @@ const GamePlay = () => {
                       src={state.endingImage}
                       alt="Victory ending scene"
                       className="w-full max-w-2xl mx-auto rounded-lg shadow-2xl border border-green-500/30"
+                      onError={(e) => {
+                        console.error('Victory ending image failed to load:', e.target.src);
+                        e.target.style.display = 'none';
+                      }}
                     />
                   </div>
                 )}
@@ -550,9 +579,7 @@ const GamePlay = () => {
                       whileTap={{ scale: 0.95 }}
                       onClick={handleSpeakNarrative}
                       disabled={isSpeechGenerating}
-                      className={`p-2 rounded-lg transition-colors ${
-                        speechBusy ? 'bg-orange-600 hover:bg-orange-500 text-white' : 'bg-red-600 hover:bg-red-500 text-white'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      className={`p-2 rounded-lg transition-colors ${speechBusy ? 'bg-orange-600 hover:bg-orange-500 text-white' : 'bg-red-600 hover:bg-red-500 text-white'} disabled:opacity-50 disabled:cursor-not-allowed`}
                       title={speechBusy ? 'Stop narration' : 'Play defeat ending'}
                     >
                       {isSpeechGenerating ? (
@@ -580,6 +607,10 @@ const GamePlay = () => {
                       src={state.endingImage}
                       alt="Defeat ending scene"
                       className="w-full max-w-2xl mx-auto rounded-lg shadow-2xl border border-red-500/30"
+                      onError={(e) => {
+                        console.error('Defeat ending image failed to load:', e.target.src);
+                        e.target.style.display = 'none';
+                      }}
                     />
                   </div>
                 )}
@@ -639,9 +670,9 @@ const GamePlay = () => {
                 >
                   <SafeIcon icon={FiRefreshCw} className="w-8 h-8 text-amber-400" />
                 </motion.div>
-                <p className="text-slate-300 text-lg mb-4">🎭 Generating your next turn...</p>
+                <p className="text-slate-300 text-lg mb-4">Generating your story...</p>
                 <div className="text-slate-400 text-sm">
-                  <p>Please wait while the AI creates your story...</p>
+                  <p>Please wait while the AI creates your narrative...</p>
                   <p className="mt-1">This may take a few moments depending on server load.</p>
                   {retryCount > 0 && (
                     <p className="mt-2 text-amber-400">Retry attempt #{retryCount}</p>
@@ -652,7 +683,7 @@ const GamePlay = () => {
                   {state.isGeneratingImage && (
                     <p className="mt-2 text-cyan-400 flex items-center justify-center gap-2">
                       <SafeIcon icon={FiImage} className="w-4 h-4" />
-                      Generating scene artwork...
+                      Creating scene artwork...
                     </p>
                   )}
                 </div>
@@ -671,8 +702,8 @@ const GamePlay = () => {
               </div>
             ) : (
               <>
-                {/* Scene Image */}
-                {state.currentImage && (
+                {/* Scene Image with enhanced status */}
+                {state.currentImage ? (
                   <div className="mb-6">
                     <motion.img
                       initial={{ opacity: 0, scale: 0.95 }}
@@ -680,7 +711,22 @@ const GamePlay = () => {
                       src={state.currentImage}
                       alt="Current scene"
                       className="w-full rounded-lg shadow-2xl border border-slate-600/50"
+                      onError={(e) => {
+                        console.error('Scene image failed to load:', e.target.src);
+                        e.target.style.display = 'none';
+                      }}
+                      onLoad={() => {
+                        console.log('Scene image loaded successfully:', state.currentImage);
+                      }}
                     />
+                  </div>
+                ) : (
+                  <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-500/30 rounded-lg">
+                    <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                      <SafeIcon icon={FiImage} className="w-4 h-4" />
+                      <span>No scene image generated for this turn</span>
+                      {retryCount > 0 && <span>(Retry #{retryCount})</span>}
+                    </div>
                   </div>
                 )}
 
@@ -693,9 +739,7 @@ const GamePlay = () => {
                         whileTap={{ scale: 0.95 }}
                         onClick={handleSpeakNarrative}
                         disabled={isSpeechGenerating || isProcessingChoice}
-                        className={`p-2 rounded-lg transition-colors ${
-                          speechBusy ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-amber-600 hover:bg-amber-500 text-white'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`p-2 rounded-lg transition-colors ${speechBusy ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-amber-600 hover:bg-amber-500 text-white'} disabled:opacity-50 disabled:cursor-not-allowed`}
                         title={speechBusy ? 'Stop narration' : 'Play narration'}
                       >
                         {isSpeechGenerating ? (
@@ -746,6 +790,7 @@ const GamePlay = () => {
                     <h4 className="text-amber-400 font-semibold text-lg mb-4 flex items-center gap-2">
                       🎯 Choose your approach:
                     </h4>
+
                     {state.currentChoices.map((choice, index) => (
                       <motion.button
                         key={index}
@@ -792,6 +837,14 @@ const GamePlay = () => {
                   <h4 className="text-lg font-semibold text-amber-400">
                     {getScoreChangeText(selectedChoice.points)}
                   </h4>
+                  {speechEnabled && speechBusy && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <SafeIcon icon={FiVolume2} className="w-4 h-4 text-cyan-400" />
+                      <span className="text-cyan-400 text-sm animate-pulse">
+                        🎭 Reading outcome...
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               <p className="text-slate-200 leading-relaxed">

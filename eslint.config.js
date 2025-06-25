@@ -35,6 +35,7 @@ export default [
       'no-unused-vars': 'off',
       'no-case-declarations': 'off',
       'no-misleading-character-class': 'off', // Disable emoji regex warnings
+      'no-async-promise-executor': 'error', // Keep this rule active
     },
   },
 ];
